@@ -1,0 +1,39 @@
+<html>
+<head>
+
+    <title></title>
+
+</head>
+<body onload="bridge.init()">
+
+<button onclick="bridge.lockScreen()">锁屏</button>
+<table id="contact">
+    <tr>
+        <td>编号</td>
+        <td>姓名</td>
+        <td>电话</td>
+    </tr>
+</table>
+
+<script type="text/javascript">
+function setContactInfo(data) {
+        var tableObj = document.getElementById("contact");
+        //通过eval方法处理得到json对象数组
+        var jsonObjects = eval(data);
+        for (var i = 0; i < jsonObjects.length; i++) {
+            //获取json对象
+            var jsonObj = jsonObjects[i];
+            var tr = tableObj.insertRow(tableObj.rows.length); //添加一行
+            //添加三列
+            var td1 = tr.insertCell(0);
+            var td2 = tr.insertCell(1);
+            var td3 = tr.insertCell(2);
+
+            td1.innerHTML = jsonObj.id;
+            td2.innerHTML = jsonObj.name;
+            td3.innerHTML = jsonObj.phone;
+        }
+    }
+</script>
+</body>
+</html>
