@@ -6,6 +6,9 @@ import android.support.annotation.Nullable;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import com.market.shell.log.FileUtils;
+import com.market.shell.log.Logger;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,6 +33,16 @@ public class ShellJSHandler {
             @Override
             public void run() {
                 webView.loadUrl("javascript:setContactInfo('"+ getJsonStr()+"')");
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public void loadLog(){
+        handler.post(new Runnable (){
+            @Override
+            public void run() {
+                webView.loadUrl("javascript:showLog('"+ FileUtils.readLogText()+"')");
             }
         });
     }

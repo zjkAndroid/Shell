@@ -16,7 +16,7 @@ android {
                 GETUI_APP_SECRET : "Gh7TB1soow590oyNYd2223"
         ]
         ndk {
-            abiFilters "armeabi", "armeabi-v7a", "x86_64"
+            abiFilters "armeabi", "armeabi-v7a", "x86_64","x86"
         }
     }
     buildTypes {
