@@ -1,15 +1,23 @@
 package com.market.shell;
 
+import android.*;
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.KeyguardManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,6 +27,7 @@ import android.view.WindowManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import com.igexin.sdk.PushManager;
@@ -30,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     //设备策略管理器
     private  DevicePolicyManager dpm = null;
     private static final int DEVICE_ADMIN = 10001;
+    private static final int IMG_REQUEST_CODE = 10001;
 
     private Handler handler = new Handler();
 
@@ -99,6 +109,9 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == DEVICE_ADMIN){
             dpm.lockNow();
+        }
+        if(requestCode == IMG_REQUEST_CODE){
+            onImgSelected(resultCode, data);
         }
     }
 
@@ -191,12 +204,12 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
+    WebView mWebView;
     /**
      * WebViewConfig
      */
     private void configWebView(){
-        WebView mWebView = (WebView)findViewById(R.id.mWebView);
+        mWebView = (WebView)findViewById(R.id.mWebView);
         WebSettings webSettings = mWebView.getSettings();
 
         webSettings.setDefaultTextEncodingName("UTF-8");
@@ -210,8 +223,165 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setDatabaseEnabled(true);
 
         mWebView.addJavascriptInterface(new ShellJSHandler(handler), "bridge");
-        mWebView.setWebChromeClient(new WebChromeClient());
+//        mWebView.setWebChromeClient(new WebChromeClient());
+
+        mWebView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onReceivedTitle(WebView view, String title) {
+                //title 就是网页的title
+                super.onReceivedTitle(view, title);
+                Log.d(TAG, "title=" + title);
+                if (!title.endsWith(".html")) {
+                    MainActivity.this.setTitle(title);
+                }
+            }
+        });
+        mWebView.setWebViewClient(new WebViewClient(){
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl){                 // Handle the error
+                Log.d(TAG, description);
+            }
+
+            public boolean shouldOverrideUrlLoading(WebView view, String url){
+                view.loadUrl(url);
+                return true;
+            }
+        });
+
         String url = "file:///android_asset/index.html";
         mWebView.loadUrl(url);
     }
+
+
+
+    private void requestPermission(){
+        if (Build.VERSION.SDK_INT >= 23) {
+            int REQUEST_CODE_CONTACT = 101;
+            String[] permissions = {
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE};
+            //验证是否许可权限
+            for (String str : permissions) {
+                if (this.checkSelfPermission(str) != PackageManager.PERMISSION_GRANTED) {
+                    //申请权限
+                    this.requestPermissions(permissions, REQUEST_CODE_CONTACT);
+                    return;
+                }
+            }
+        }
+    }
+
+    // 读取系统图库
+    public void openAblum(){
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(intent, IMG_REQUEST_CODE);
+    }
+
+    private void onImgSelected(int resultCode, Intent data){
+        if(resultCode == RESULT_OK) {
+            Uri uri = data.getData();
+            if (uri == null) {
+                Log.d(TAG, "image uri is null");
+                Toast.makeText(this, "获取图片Uri失败", Toast.LENGTH_LONG).show();
+                return;
+            }
+            final String path = getRealPathFromUri(this, uri);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mWebView.loadUrl("javascript:bridge.afterAblum('"+ path +"')");
+                }
+            });
+        }
+    }
+
+
+    /**
+     * 根据图片的Uri获取图片的绝对路径。@uri 图片的uri
+     * @return 如果Uri对应的图片存在,那么返回该图片的绝对路径,否则返回null
+     */
+    public static String getRealPathFromUri(Context context, Uri uri) {
+        if(context == null || uri == null) {
+            return null;
+        }
+        if("file".equalsIgnoreCase(uri.getScheme())) {
+            return getRealPathFromUri_Byfile(context,uri);
+        }
+        if("content".equalsIgnoreCase(uri.getScheme())) {
+            return getRealPathFromUri_Api11To18(context,uri);
+        }
+        return getRealPathFromUri_AboveApi19(context, uri);//没用到
+    }
+
+    //针对图片URI格式为Uri:: file:///storage/emulated/0/DCIM/Camera/IMG_20170613_132837.jpg
+    private static String getRealPathFromUri_Byfile(Context context,Uri uri){
+        String uri2Str = uri.toString();
+        String filePath = uri2Str.substring(uri2Str.indexOf(":") + 3);
+        return filePath;
+    }
+
+    /**
+     * 适配api19以上,根据uri获取图片的绝对路径
+     */
+    @SuppressLint("NewApi")
+    private static String getRealPathFromUri_AboveApi19(Context context, Uri uri) {
+        String filePath = null;
+        String wholeID = null;
+
+        wholeID = DocumentsContract.getDocumentId(uri);
+
+        // 使用':'分割
+        String id = wholeID.split(":")[1];
+
+        String[] projection = { MediaStore.Images.Media.DATA };
+        String selection = MediaStore.Images.Media._ID + "=?";
+        String[] selectionArgs = { id };
+
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection,
+                selection, selectionArgs, null);
+        int columnIndex = cursor.getColumnIndex(projection[0]);
+
+        if (cursor.moveToFirst()) {
+            filePath = cursor.getString(columnIndex);
+        }
+        cursor.close();
+        return filePath;
+    }
+
+    /**
+     * //适配api11-api18,根据uri获取图片的绝对路径。
+     * 针对图片URI格式为Uri:: content://media/external/images/media/1028
+     */
+    private static String getRealPathFromUri_Api11To18(Context context, Uri uri) {
+        String filePath = null;
+        String[] projection = { MediaStore.Images.Media.DATA };
+
+        CursorLoader loader = new CursorLoader(context, uri, projection, null,
+                null, null);
+        Cursor cursor = loader.loadInBackground();
+
+        if (cursor != null) {
+            cursor.moveToFirst();
+            filePath = cursor.getString(cursor.getColumnIndex(projection[0]));
+            cursor.close();
+        }
+        return filePath;
+    }
+
+    /**
+     * 适配api11以下(不包括api11),根据uri获取图片的绝对路径
+     */
+    private static String getRealPathFromUri_BelowApi11(Context context, Uri uri) {
+        String filePath = null;
+        String[] projection = { MediaStore.Images.Media.DATA };
+        Cursor cursor = context.getContentResolver().query(uri, projection,
+                null, null, null);
+        if (cursor != null) {
+            cursor.moveToFirst();
+            filePath = cursor.getString(cursor.getColumnIndex(projection[0]));
+            cursor.close();
+        }
+        return filePath;
+    }
+
 }

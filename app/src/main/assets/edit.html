@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title></title>
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" type="text/css" href="./static/css/reset.css" />
+    <link rel="stylesheet" type="text/css" href="./static/css/common.css" />
+    <link rel="stylesheet" type="text/css" href="./static/fonts/iconfont.css" />
+    <script type="text/javascript" src="./static/js/jquery-1.10.1.min.js"></script>
+    <script>
+        (function() {
+          var defaultW = 375;
+          var phoneScale = parseInt(window.screen.width) / defaultW;
+          document.write('<meta name="viewport" content="width=' + defaultW + ',initial-scale=' + phoneScale + ',minimum-scale=' + phoneScale + ',maximum-scale=' + phoneScale + ',user-scalable=no" />')
+          var s = document.getElementsByTagName("script")[0];
+        })()
+    </script>
+    <style type="text/css">
+        .row{margin-bottom: 10px;}
+        input{flex: 1;line-height: 30px;border: 1px solid #ccc;padding: 0 5px;}
+        textarea{line-height: 20px;height: 100px;border: 1px solid #ccc;flex: 1;padding: 0 5px;resize:none}
+        .row img{width: 100%;}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="left">
+        <i class="btnBack iconfont icon-fanhuijiantou"></i>
+    </div>
+    友助
+    <div class="right">
+        <i class="btnSave iconfont icon-baocun"></i>
+        <i class="btnShare iconfont icon-fenxiang"></i>
+    </div>
+</div>
+<div class="wrapper">
+    <div class="row flex">
+        <input class="title" type="text" value="" placeholder="标题" />
+    </div>
+    <div class="row flex">
+        <textarea class="desc" placeholder="分享描述"></textarea>
+    </div>
+    <div class="row flex ">
+        <img class="imgBox" class="shareImg" src="javascript:void(0)"/>
+    </div>
+</div>
+<script type="text/javascript">
+        $(function(){
+            var clickEvent = ((document.ontouchstart !== null) ?'click' : 'touchstart');
+
+            init();
+            function init(){
+                bindHandler();
+                var curPath = localStorage.getItem('curPath');
+                var curItem = localStorage.getItem('curItem');
+                if(curItem){
+                    curItem = JSON.parse(curItem);
+                    curPath = curItem.imgPath;
+                    $('.title').val(curItem.title);
+                    $('.desc').val(curItem.desc);
+                }
+                $('.imgBox').attr('src',"file://"+ curPath);
+            }
+            function bindHandler(){
+                $('.btnBack').on(clickEvent, function(){
+                    history.back();
+                    localStorage.removeItem('curPath');
+                    localStorage.removeItem('curItem');
+                });
+
+                $('.btnSave').on(clickEvent, function(){
+                    saveCurItem();
+                    localStorage.removeItem('curPath');
+                    localStorage.removeItem('curItem');
+                    location.href = './index.html';
+                });
+
+                $('.btnShare').on(clickEvent, function(){
+                    saveCurItem();
+                    bridge.shareToTimeLine(localStorage.getItem('curItem'));
+                });
+
+                $('.imgBox').on(clickEvent, function(){
+                    bridge.openAblum();
+                });
+                bridge.afterAblum = function(path){
+                    alert(path)
+                    localStorage.setItem('curPath', path);
+                    $('.imgBox').attr('src',"file://"+ path);
+                }
+            }
+
+            function saveCurItem(){
+                var curItem = localStorage.getItem('curItem');
+                if(!curItem || !curItem.id){
+                    curItem = {
+                        id: new Date().getTime()
+                    };
+                } else {
+                    curItem = JSON.parse(curItem);
+                }
+                curItem.title = $('.title').val();
+                curItem.desc = $('.desc').val();
+                curItem.imgPath = localStorage.getItem('curPath');
+                if(!curItem.desc && !curItem.imgPath){
+                    return;
+                }
+
+                localStorage.setItem('curItem', JSON.stringify(curItem));
+
+                var cacheList = localStorage.getItem('cacheList');
+                cacheList = cacheList ? JSON.parse(cacheList) : [];
+                var length = cacheList.length;
+
+                for(var i = 0; i < length; i++){
+                    var tmpItem = cacheList[i];
+                    if(tmpItem.id === curItem.id){
+                        tmpItem = curItem;
+                        break;
+                    }
+                }
+                cacheList.push(curItem);
+                localStorage.setItem('cacheList', JSON.stringify(cacheList));
+            }
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+
+.flex{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;
+-webkit-box-pack:justify;-webkit-justify-content:space-between;-ms-flex-pack:justify;justify-content:space-between;}
+
+.flex-center-v {display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;display: flex; flex-direction: column; 
+-webkit-box-pack:justify;-ms-flex-pack:justify;-webkit-justify-content:center;justify-content:center;justify-content: center; }
+
+.toast{display: none;padding: 5px 5%;left: 50%;top: 50%;
+  -webkit-transform: translate(-50%, -50%);transform: translate(-50%, -50%);background: rgba(0, 0, 0, 0.8);position: fixed;max-width: 85%;border-radius: 6px;color: #fff;box-sizing: border-box;text-align: center;z-index: 1000;line-height: 30px;word-wrap:break-word;}
+.toast span{font-size: 12px;display:block;text-align: center;}
+
+.indicator{-webkit-transition: opacity .2s linear;transition: opacity .2s linear;display: none;}
+.indicator-wrapper{top: 50%;left: 50%;position: fixed;-webkit-transform: translate(-50%,-50%);transform: translate(-50%,-50%);border-radius: 5px;background: rgba(0,0,0,.8);color: #fff;box-sizing: border-box;text-align: center;padding: 15px;line-height: 18px;}
+.indicator-mask {top: 0;left: 0;position: fixed;width: 100%;height: 100%;opacity: 0;background: transparent;}
+.indicator-spin {text-align: center;display: inline-block;}
+.spinner-snake {-webkit-animation: spinner-rotate .8s infinite linear;animation: spinner-rotate .8s infinite linear;border: 4px solid transparent;border-radius: 50%;width: 32px;height: 32px;border-top-color: #ccc; border-left-color: #ccc; border-bottom-color: #ccc;}
+.indicator-text {display: none;color: #fff;text-align: center;margin-top: 10px;font-size: 14px;}
+@keyframes spinner-rotate{
+	0%{-webkit-transform:rotate(0deg);transform:rotate(0deg)}
+	to{-webkit-transform:rotate(1turn);transform:rotate(1turn)}
+}
+
+.header{width: 100%;line-height: 50px;height: 50px; background-color:#3F51B5;color: #fff;text-align: center;position: relative;overflow: hidden;}
+.header i{width: 40px;line-height: 50px;height:50px;font-size: 25px; text-align: center;display: inline-block;}
+.header .left{position: absolute;left: 5px;top:0;}
+.header .right{position: absolute;right:5px;top:0;}
+.wrapper{margin: 20px 15px;position: relative; max-width: 375px;overflow: hidden;background-size: contain;}

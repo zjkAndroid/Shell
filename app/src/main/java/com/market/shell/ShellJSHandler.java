@@ -3,6 +3,7 @@ package com.market.shell;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
@@ -79,4 +80,16 @@ public class ShellJSHandler {
         ShellApplication.sendMessage(message);
     }
 
+
+    @JavascriptInterface
+    public void openAblum(){
+        ShellApplication.activity.openAblum();
+    }
+
+
+    @JavascriptInterface
+    public void shareToTimeLine(String jsonData){
+        Log.d("ShellJSHandler", jsonData);
+        WeChatShare.shareToTimeLine(ShellApplication.activity, jsonData);
+    }
 }
